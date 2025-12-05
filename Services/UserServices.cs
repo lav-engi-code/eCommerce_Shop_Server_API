@@ -19,13 +19,11 @@ namespace eCommerce_Shop_Server_API.Services
         {
             try
             {
-                // 1️⃣ Match password + confirm password
                 if (model.Password != model.ConfirmPassword)
                     return "Passwords do not match";
 
                 await sqlConnection.OpenAsync();
 
-                // 2️⃣ Check if email already exists
                 string checkQuery = "SELECT COUNT(*) FROM Users WHERE Email = @Email";
 
                 SqlCommand checkCmd = new SqlCommand(checkQuery, sqlConnection);
@@ -37,7 +35,6 @@ namespace eCommerce_Shop_Server_API.Services
                     return "Email already registered";
                 }
 
-                // 3️⃣ Insert user
                 string insertQuery = @"INSERT INTO Users (FullName, Email, Password)
                                    VALUES (@FullName, @Email, @Password)";
 
@@ -67,28 +64,27 @@ namespace eCommerce_Shop_Server_API.Services
             {
                 await sqlConnection.OpenAsync();
 
-                // 1️⃣ Check if email exists
-                string query = "SELECT Password FROM Users WHERE Email = @Email";
+                string query = "SELECT FullName, Password FROM Users WHERE Email = @Email";
 
-                SqlCommand cmd = new SqlCommand(query, sqlConnection);
+                using SqlCommand cmd = new SqlCommand(query, sqlConnection);
                 cmd.Parameters.AddWithValue("@Email", model.Email);
 
-                object result = await cmd.ExecuteScalarAsync();
+                SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
-                if (result == null)
+                if (!reader.Read())
                 {
                     return "Invalid email";
                 }
 
-                string storedPassword = result.ToString();
+                string dbName = reader["FullName"].ToString();
+                string dbPassword = reader["Password"].ToString();
 
-                // 2️⃣ Verify password
-                if (storedPassword != model.Password)
+                if (dbPassword != model.Password)
                 {
                     return "Wrong password";
                 }
 
-                return "ok"; // Login success
+                return $"ok|{dbName}";
             }
             catch (Exception ex)
             {
@@ -99,7 +95,6 @@ namespace eCommerce_Shop_Server_API.Services
                 await sqlConnection.CloseAsync();
             }
         }
-
 
     }
 }

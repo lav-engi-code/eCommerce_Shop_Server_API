@@ -22,19 +22,25 @@ namespace eCommerce_Shop_Server_API.Services
             SqlDataAdapter sq = new SqlDataAdapter("SELECT * FROM Contact", sqlConnection);
             DataTable dataTable = new DataTable();
             sq.Fill(dataTable);
+
             List<Contact> user1 = new List<Contact>();
+
             foreach (DataRow row in dataTable.Rows)
             {
                 user1.Add(new Contact
                 {
-                    Full_Name = Convert.ToString(row["Full_Name"]),
-                    Email = Convert.ToString(row["Email"]),
-                    Phone = Convert.ToString(row["Phone"]),
-                    Message = Convert.ToString(row["Message"])
+                    Full_Name = row["Full_Name"]?.ToString(),
+                    Email = row["Email"]?.ToString(),
+                    Phone = row["Phone"]?.ToString(),
+                    Message = row["Message"]?.ToString(),
+                    Date = ((DateTimeOffset)row["Date"]).DateTime
+
                 });
             }
+
             return user1;
         }
+
         public IResult AddContactMethod(Contact Ed)
         {
             sqlConnection.Open();
@@ -65,6 +71,30 @@ namespace eCommerce_Shop_Server_API.Services
             catch (Exception ex)
             {
                 sqlConnection.Close();
+                return Results.Problem(ex.Message);
+            }
+        }
+        public IResult ArchiveThenDeleteContact(Contact contact)
+        {
+            try
+            {
+                Archive_Contact_Services archiveService = new Archive_Contact_Services(_configuration);
+                Archive_Contact archive = new Archive_Contact
+                {
+                    Full_Name = contact.Full_Name,
+                    Email = contact.Email,
+                    Phone = contact.Phone,
+                    Message = contact.Message
+                };
+                archiveService.AddArchiveContactMethod(archive);
+
+                // 2. Delete the contact from Contact table
+                DeleteContactByPhone(contact.Phone);
+
+                return Results.Ok(new { message = "Contact archived and deleted successfully." });
+            }
+            catch (Exception ex)
+            {
                 return Results.Problem(ex.Message);
             }
         }

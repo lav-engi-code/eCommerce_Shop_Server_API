@@ -26,6 +26,7 @@ builder.Services.AddSingleton<Contact_Services>();
 builder.Services.AddSingleton<Chat_Services>();
 builder.Services.AddSingleton<Cart_Services>();
 builder.Services.AddScoped<UserServices>();
+builder.Services.AddScoped<Archive_Contact_Services>();
 
 builder.Services.AddCors(options =>
 {
@@ -70,6 +71,16 @@ app.MapPost("/add-contact", ([FromBody] Contact Eda, Contact_Services ads) =>
     ads.AddContactMethod(Eda);
     return Results.Ok("Contact added successfully");
 });
+app.MapPost("/add-archive-contact", ([FromBody] Archive_Contact Eda, Archive_Contact_Services ads) =>
+{
+    ads.AddArchiveContactMethod(Eda);
+    return Results.Ok("Archive Contact added successfully");
+});
+app.MapPost("/archive-delete-contact", ([FromBody] Contact contact, Contact_Services cs) =>
+{
+    cs.ArchiveThenDeleteContact(contact);
+    return Results.Ok("Contact archived and deleted successfully");
+});
 app.MapPost("/chat-send", async ([FromBody] Chat_Message msg, Chat_Services chatService) =>
 {
     var response = await chatService.SendMessage(msg);
@@ -100,9 +111,13 @@ app.MapGet("/chat-test", () =>
 {
     return Results.Ok("Chat API is working!");
 });
-app.MapGet("/address/get", async (Address_Services ads) =>
+app.MapGet("/address/get-by-email/{email}", (string email, Address_Services ads) =>
 {
-    return await ads.GetAllAddressMethod();
+    return ads.GetAddressesByUserEmail(email);
+});
+app.MapGet("/address/get/{id}", (int id, Address_Services ads) =>
+{
+    return ads.GetAddressById(id);
 });
 app.MapGet("/get-food", (Fast_food_Services fs) =>
 {
@@ -133,7 +148,10 @@ app.MapGet("/cart/get", async (Cart_Services cs) =>
 
 // Put Method
 
-
+app.MapPut("/address/update", (Address ad, Address_Services ads) =>
+{
+    return ads.UpdateAddress(ad);
+});
 app.MapPut("/cart/update", ([FromBody] Product Ed, Cart_Services cs) =>
 {
     return cs.UpdateCartMethod(Ed);
@@ -156,7 +174,10 @@ app.MapPut("/update-food/{id}", (int id, Product updatedProduct, Fast_food_Servi
 
 // Delete Method
 
-
+app.MapDelete("/address/delete/{id}", (int id, Address_Services ads) =>
+{
+    return ads.DeleteAddress(id);
+});
 app.MapDelete("/cart/remove/{id}", (int id, Cart_Services cs) =>
 {
     return cs.DeleteCartMethod(id);

@@ -2,6 +2,7 @@
 {
     public class Contact
     {
+        public DateTime? Date { get; set; }
         public string? Full_Name { get; set; }
         public string? Email { get; set; }
         public string? Phone { get; set; }
